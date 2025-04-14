@@ -5,6 +5,9 @@ import 'package:testing_1/widgets/game_buttons.dart';
 import 'package:testing_1/widgets/image_display.dart';
 import 'package:testing_1/widgets/quote_card.dart';
 import 'package:testing_1/models/quote.dart';
+import '../../objectbox.g.dart';
+import '../services/objectbox_service.dart';
+import 'package:testing_1/models/globals.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -14,14 +17,23 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  List<Quote> _quotes = [];
   Quote? editingQuote;
   final TextEditingController textController = TextEditingController();
   final TextEditingController authorController = TextEditingController();
 
+  void _loadQuotes() {
+    final list = objectBox?.getAllQuotes() ?? [];
+    setState(() {
+      _quotes = list;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    Future.microtask(() {
+      _loadQuotes();
       Provider.of<GameService>(context, listen: false).resetGame();
     });
   }
@@ -34,24 +46,34 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
-    setState(() {
-      if (editingQuote != null) {
-        editingQuote!.text = textController.text.trim();
-        editingQuote!.author = authorController.text.trim().isEmpty ? 'Unknown' : authorController.text.trim();
-        editingQuote = null;
-      } else {
-        gameService.quotes.add(Quote(
-          text: textController.text.trim(),
-          author: authorController.text.trim().isEmpty ? 'Unknown' : authorController.text.trim(),
-        ));
-      }
+    if (objectBox == null) {
+      debugPrint('❌ objectBox masih null saat menambahkan quote');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Database not ready!'), backgroundColor: Colors.red),
+      );
+      return;
+    }
 
-      textController.clear();
-      authorController.clear();
-    });
+    final quote = Quote(
+      id: editingQuote?.id ?? 0,
+      text: textController.text.trim(),
+      author: authorController.text.trim().isEmpty ? 'Unknown' : authorController.text.trim(),
+    );
+
+    if (editingQuote != null) {
+      objectBox!.updateQuote(quote);
+    } else {
+      objectBox!.addQuote(quote);
+    }
+
+    textController.clear();
+    authorController.clear();
+    editingQuote = null;
+
+    _loadQuotes();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Quote added successfully!')),
+      const SnackBar(content: Text('Quote saved successfully!')),
     );
   }
 
@@ -95,20 +117,22 @@ class _MainScreenState extends State<MainScreen> {
               ),
               const SizedBox(height: 20),
               Column(
-                children: gameService.quotes.map((quote) => QuoteCard(
-                  quote: quote,
-                  delete: () {
-                    gameService.quotes.remove(quote);
-                    gameService.notifyListeners();
-                  },
-                  edit: () {
-                    setState(() {
-                      editingQuote = quote;
-                      textController.text = quote.text ?? '';
-                      authorController.text = quote.author ?? '';
-                    });
-                  },
-                )).toList(),
+                children: _quotes.map((quote) {
+                  return QuoteCard(
+                    quote: quote,
+                    delete: () {
+                      objectBox?.deleteQuote(quote.id);
+                      _loadQuotes();
+                    },
+                    edit: () {
+                      setState(() {
+                        editingQuote = quote;
+                        textController.text = quote.text ?? '';
+                        authorController.text = quote.author ?? '';
+                      });
+                    },
+                  );
+                }).toList(),
               ),
             ],
           ),
