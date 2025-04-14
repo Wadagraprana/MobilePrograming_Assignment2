@@ -8,7 +8,6 @@ Game & Quotes Apps adalah aplikasi berbasis Flutter yang menggabungkan game inte
   - NRP: 5025221101
   - Kelas: Pemrograman Perangkat Bergerak B
   - Dosen: Agus Budi Raharjo, S.Kom, M.Kom., Ph.D.
-  - Demo Video: https://youtu.be/Pnq_9Pro3tc
     
 Tugas Pemrograman Perangkat Bergerak B - Membuat Aplikasi Sederhana Berbasis Flutter dengan StatefullWidget, StatelessWidget, custom class, Apply create, read, update, delete.
 
