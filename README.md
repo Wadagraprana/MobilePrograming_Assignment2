@@ -25,7 +25,29 @@ Tugas Pemrograman Perangkat Bergerak B - Membuat Aplikasi Sederhana Berbasis Flu
   - Provider → Untuk state management yang efisien.
   - Material Design → UI berbasis Flutter Material.
 
-## Struktur Proyek
+## Perubahan Terbaru: Migrasi ke ObjectBox
+
+Pada versi sebelumnya, data kutipan (Quotes) hanya disimpan di dalam list lokal tanpa persistent storage. Kini, aplikasi telah di-upgrade menggunakan database lokal ObjectBox untuk menyimpan data secara permanen bahkan setelah aplikasi ditutup.
+
+### Tujuan Perubahan
+
+  - Menyediakan penyimpanan persisten untuk data kutipan.
+  - Menambahkan fitur CRUD berbasis database.
+  - Meningkatkan skalabilitas aplikasi untuk menyimpan lebih banyak data.
+
+### Perubahan Teknis yang Dilakukan
+
+|            Perubahan              |                                             Keterangan                                                                |
+| :-------------------------------: | :-------------------------------------------------------------------------------------------------------------------: |
+| Penambahan Model Entity           | Menambahkan anotasi @Entity() pada Quote di quote.dart untuk membuat model database ObjectBox.                        |
+| Penambahan File ObjectBox Service | Membuat objectbox_service.dart sebagai service class untuk mengelola operasi database (getAll, add, update, delete).  |
+| Globalisasi Instance ObjectBox    | Menambahkan file globals.dart untuk menyimpan instance objectBox secara global.                                       |
+| Inisialisasi Awal ObjectBox       | Fungsi _initObjectBox() ditambahkan di main.dart untuk menginisialisasi ObjectBox sebelum masuk ke tampilan utama.    |
+| Update di MainScreen              | Semua aksi CRUD pada kutipan sekarang terhubung ke database ObjectBox, bukan list lokal biasa.                        |
+| Refactor Struktur Folder          | Menyesuaikan folder models/ dan services/ untuk memisahkan data dan logika bisnis.                                    |
+
+
+## Struktur Proyek Sebelumnya
 ```
 lib/
 ├── main.dart                  # Entry point aplikasi
@@ -42,6 +64,54 @@ lib/
 ├── utils/
 │   ├── snackbar_helper.dart   # Helper untuk snackbar (notifikasi)
 ```
+
+## Update Struktur Proyek
+```
+lib/
+├── main.dart                      # Entry point aplikasi dan inisialisasi ObjectBox
+├── screens/
+│   ├── main_screen.dart           # Tampilan utama aplikasi
+├── widgets/
+│   ├── game_buttons.dart          # Widget tombol permainan
+│   ├── image_display.dart         # Widget tampilan gambar
+│   ├── quote_card.dart            # Widget kartu kutipan
+├── models/
+│   ├── quote.dart                 # Model data kutipan dengan @Entity (ObjectBox)
+│   ├── globals.dart               # Global variable: ObjectBoxService instance
+├── services/
+│   ├── game_service.dart          # Logika utama permainan
+│   ├── objectbox_service.dart     # Logika CRUD untuk database ObjectBox
+├── utils/
+│   ├── snackbar_helper.dart       # Helper untuk snackbar (notifikasi)
+├── objectbox.g.dart               # Generated file ObjectBox
+```
+
+## Hal-Hal yang Dilakukan
+
+  - Tambahkan Dependencies di `pubspec.yaml`
+      ```
+        dependencies:
+          objectbox: ^4.1.0
+          objectbox_flutter_libs: any
+          # If you run the command for ObjectBox Sync it should add instead:
+          # objectbox_sync_flutter_libs: any
+      
+        dev_dependencies:
+          build_runner: ^2.0.0
+          objectbox_generator: any
+      ```
+  - Tambahkan Dependencies di `android/app/build.gradle.kts`
+      ```
+        android {
+          ndkVersion = "27.0.12077973" # ini diubah yang semulanya --> flutter.ndkVersion
+      ```
+  - Jalankan
+      ```
+        flutter clean
+        flutter pub get
+        flutter pub run build_runner build --delete-conflicting-outputs
+        flutter run
+      ```
 
 ## Tampilan Aplikasi
 
